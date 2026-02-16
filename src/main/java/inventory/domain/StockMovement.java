@@ -9,7 +9,8 @@ import java.time.Instant;
 
 public class StockMovement {
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "INTEGER")
     private Long id;
 
     @ManyToOne(optional = false)
@@ -21,7 +22,7 @@ public class StockMovement {
 
     private int quantity;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, columnDefinition = "INTEGER")
     @Convert(converter = InstantToLongConverter.class)
     private Instant createdAt;
 

@@ -39,13 +39,13 @@ public class ReportController {
             csvBuilder.append(row.itemId()).append(",");
             csvBuilder.append(escapeCsv(row.itemName())).append(",");
             csvBuilder.append(row.currentStock()).append(",");
-            csvBuilder.append(row.minStock()).append(",");
+            csvBuilder.append(row.minStock()).append("\n");
         }
 
         byte [] body = csvBuilder.toString().getBytes(StandardCharsets.UTF_8);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "Attachment, filename:\"stock-report.csv\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "Attachment; filename=\"stock-report.csv\"")
                 .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
                 .body(body);
     }

@@ -7,7 +7,8 @@ import jakarta.persistence.*;
 
 public class Item {
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "INTEGER")
     private Long id;
     private String name;
 

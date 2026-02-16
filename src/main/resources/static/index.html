@@ -12,17 +12,21 @@
 <div class="card mb-4">
     <div class="card-header">Criar Item</div>
     <div class="card-body">
-        <form>
-            <div class="mb-3">
-                <label class="form-label">Nome</label>
-                <input type="text" class="form-control">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Stock mínimo</label>
-                <input type="number" class="form-control">
-            </div>
-            <button type="button" class="btn btn-primary">Criar</button>
-        </form>
+
+        <div class="mb-3">
+            <label class="form-label">Nome</label>
+            <input id="itemName" type="text" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Stock mínimo</label>
+            <input id="minStock" type="number" class="form-control">
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="createItem()">
+            Criar
+        </button>
+
     </div>
 </div>
 
@@ -38,11 +42,72 @@
                 <th>Stock Mínimo</th>
             </tr>
             </thead>
-            <tbody>
-            </tbody>
+            <tbody id="itemsTable"></tbody>
         </table>
     </div>
 </div>
+
+<script>
+
+    async function loadItems() {
+        try {
+            const response = await fetch("/api/reports/stock");
+            const items = await response.json();
+
+            const tbody = document.getElementById("itemsTable");
+            tbody.innerHTML = "";
+
+            items.forEach(item => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                <td>${item.itemId}</td>
+                <td>${item.itemName}</td>
+                <td>${item.currentStock}</td>
+                <td>${item.minStock}</td>
+            `;
+
+                tbody.appendChild(row);
+            });
+
+        } catch (error) {
+            console.error("Erro ao carregar itens:", error);
+        }
+    }
+
+    async function createItem() {
+
+        const name = document.getElementById("itemName").value;
+        const minStock = document.getElementById("minStock").value;
+
+        if (!name || !minStock) {
+            alert("Preenche todos os campos.");
+            return;
+        }
+
+        try {
+            await fetch("/api/items", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: name,
+                    minStock: parseInt(minStock)
+                })
+            });
+
+            document.getElementById("itemName").value = "";
+            document.getElementById("minStock").value = "";
+
+            loadItems();
+
+        } catch (error) {
+            console.error("Erro ao criar item:", error);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadItems);
+
+</script>
 
 </body>
 </html>
