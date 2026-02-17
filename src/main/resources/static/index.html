@@ -40,6 +40,7 @@
                 <th>Nome</th>
                 <th>Stock Atual</th>
                 <th>Stock Mínimo</th>
+                <th>Ações</th>
             </tr>
             </thead>
             <tbody id="itemsTable"></tbody>
@@ -60,11 +61,22 @@
             items.forEach(item => {
                 const row = document.createElement("tr");
 
+                let stockClass = "";
+                if (item.currentStock < item.minStock) {
+                    stockClass = "fw-bold text-danger";
+                }
+
                 row.innerHTML = `
                 <td>${item.itemId}</td>
                 <td>${item.itemName}</td>
-                <td>${item.currentStock}</td>
+                <td class="${stockClass}">${item.currentStock}</td>
                 <td>${item.minStock}</td>
+                <td class="d-flex gap-2">
+                    <button class="btn btn-sm btn-success" onclick="addStock(${item.itemId})">Entrada</button>
+                    <button class="btn btn-sm btn-danger" onclick="removeStock(${item.itemId})">Saída</button>
+                    <button class="btn btn-sm btn-warning" onclick="adjustStock(${item.itemId})">Ajuste</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${item.itemId}, '${escapeForJs(item.itemName)}')">REMOVER</button>
+                </td>
             `;
 
                 tbody.appendChild(row);
@@ -72,21 +84,21 @@
 
         } catch (error) {
             console.error("Erro ao carregar itens:", error);
+            alert("Erro ao carregar itens. Vê a consola (F12).");
         }
     }
 
     async function createItem() {
-
         const name = document.getElementById("itemName").value;
         const minStock = document.getElementById("minStock").value;
 
-        if (!name || !minStock) {
+        if (!name || minStock === "") {
             alert("Preenche todos os campos.");
             return;
         }
 
         try {
-            await fetch("/api/items", {
+            const response = await fetch("/api/items", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -95,6 +107,12 @@
                 })
             });
 
+            if (!response.ok) {
+                const body = await safeReadJson(response);
+                alert(body?.message || "Erro ao criar item.");
+                return;
+            }
+
             document.getElementById("itemName").value = "";
             document.getElementById("minStock").value = "";
 
@@ -102,7 +120,107 @@
 
         } catch (error) {
             console.error("Erro ao criar item:", error);
+            alert("Erro ao criar item. Vê a consola (F12).");
         }
+    }
+
+    async function addStock(itemId) {
+        const quantityStr = prompt("Quantidade a adicionar (IN):");
+        if (quantityStr === null) return;
+
+        const quantity = parseInt(quantityStr);
+        if (isNaN(quantity) || quantity <= 0) {
+            alert("Quantidade inválida. Tem de ser um inteiro > 0.");
+            return;
+        }
+
+        await createMovement(itemId, "IN", quantity);
+    }
+
+    async function removeStock(itemId) {
+        const quantityStr = prompt("Quantidade a remover (OUT):");
+        if (quantityStr === null) return;
+
+        const quantity = parseInt(quantityStr);
+        if (isNaN(quantity) || quantity <= 0) {
+            alert("Quantidade inválida. Tem de ser um inteiro > 0.");
+            return;
+        }
+
+        await createMovement(itemId, "OUT", quantity);
+    }
+
+    async function adjustStock(itemId) {
+        const quantityStr = prompt("ADJUST (perda): número de unidades perdidas. Ex: 3");
+        if (quantityStr === null) return;
+
+        const loss = parseInt(quantityStr);
+        if (isNaN(loss) || loss <= 0) {
+            alert("Quantidade inválida. Tem de ser um inteiro > 0.");
+            return;
+        }
+
+        await createMovement(itemId, "ADJUST", -loss);
+    }
+
+    async function createMovement(itemId, type, quantity) {
+        try {
+            const response = await fetch("/api/movements", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    itemId: itemId,
+                    type: type,
+                    quantity: quantity
+                })
+            });
+
+            if (!response.ok) {
+                const body = await safeReadJson(response);
+                alert(body?.message || "Erro ao registar movimento.");
+                return;
+            }
+
+            loadItems();
+
+        } catch (error) {
+            console.error("Erro ao registar movimento:", error);
+            alert("Erro ao registar movimento. Vê a consola (F12).");
+        }
+    }
+
+    async function deleteItem(itemId, itemName) {
+        const ok = confirm(`Remover o item "${itemName}" (id=${itemId})?`);
+        if (!ok) return;
+
+        try {
+            const response = await fetch(`/api/items/${itemId}`, { method: "DELETE" });
+
+            if (!response.ok) {
+                const body = await safeReadJson(response);
+                alert(body?.message || "Erro ao remover item.");
+                return;
+            }
+
+            loadItems();
+
+        } catch (error) {
+            console.error("Erro ao remover item:", error);
+            alert("Erro ao remover item. Vê a consola (F12).");
+        }
+    }
+
+    async function safeReadJson(response) {
+        try {
+            return await response.json();
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function escapeForJs(value) {
+        if (value === null || value === undefined) return "";
+        return String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
     }
 
     document.addEventListener("DOMContentLoaded", loadItems);

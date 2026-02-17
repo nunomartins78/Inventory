@@ -156,3 +156,22 @@ Confirma que ItemRepository está declarado como public interface ItemRepository
 A correção mais “limpa” é garantir que o package principal é mesmo inventory e que todos os packages (controller, service, repository, domain) estão dentro dele.
 Alternativa (se tiveres mesmo de manter packages fora do root): configurar explicitamente scanning, por exemplo com @SpringBootApplication(scanBasePackages = "...") ou @EnableJpaRepositories(basePackages = "...").
 Se após isto continuar, o próximo passo é olhar para as primeiras exceções no log (às vezes o erro real está acima e este é só consequência).
+
+---
+
+## Pedido à IA
+
+Pretendo criar um frontend muito simples para o meu sistema de gestão de inventário desenvolvido em Spring Boot.
+
+O objetivo é:
+- Criar uma página HTML estática servida pelo próprio Spring Boot.
+- Usar Bootstrap via CDN apenas para styling.
+- Implementar JavaScript simples com `fetch()` para consumir a API REST já existente.
+- Permitir:
+    - Criar itens
+    - Listar itens com stock atual (via endpoint de relatório)
+    - Registar movimentos (Entrada, Saída e Ajuste para perdas)
+    - Remover itens
+- Destacar visualmente quando o stock atual fica abaixo do stock mínimo.
+
+O frontend deve ser simples, coerente com alguém que fez apenas um bootcamp, sem frameworks adicionais (React, Angular, etc.).

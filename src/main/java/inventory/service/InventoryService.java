@@ -60,28 +60,45 @@ public class InventoryService {
         itemRepository.deleteById(itemId);
     }
 
-    public StockMovement recordMovement (Long itemId, MovementType type, int quantity){
+    public StockMovement recordMovement(Long itemId, MovementType type, int quantity){
+
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(()-> new NotFoundException("Item não encontrado: id = " + itemId));
+                .orElseThrow(() -> new NotFoundException("Item não encontrado: id = " + itemId));
 
-        int currentStock = calculateCurrentStock (itemId);
-
-        int newStock = currentStock;
-        if (type == MovementType.IN){
-            newStock = currentStock + quantity;
-        } else if (type == MovementType.OUT) {
-            newStock = currentStock - quantity;
-        } else if (type == MovementType.ADJUST) {
-            newStock = currentStock + quantity;
+        if (type == MovementType.IN || type == MovementType.OUT) {
+            if (quantity <= 0) {
+                throw new BusinessRuleException("Quantidade deve ser maior que 0 para IN ou OUT.");
+            }
         }
 
-        if (newStock < 0){
-            throw new BusinessRuleException("Operação inválida: stock não pode ser negativo");
+        if (type == MovementType.ADJUST) {
+            if (quantity == 0) {
+                throw new BusinessRuleException("ADJUST não pode ser 0.");
+            }
+        }
+
+        int currentStock = calculateCurrentStock(itemId);
+
+        int newStock = currentStock;
+
+        if (type == MovementType.IN) {
+            newStock = currentStock + quantity;
+        }
+        else if (type == MovementType.OUT) {
+            newStock = currentStock - quantity;
+        }
+        else if (type == MovementType.ADJUST) {
+            newStock = currentStock + quantity; // pode ser negativo (perda)
+        }
+
+        if (newStock < 0) {
+            throw new BusinessRuleException("Operação inválida: stock não pode ser negativo.");
         }
 
         StockMovement movement = new StockMovement(item, type, quantity, Instant.now());
-        return  stockMovementRepository.save(movement);
+        return stockMovementRepository.save(movement);
     }
+
 
     public int calculateCurrentStock (Long itemId){
         List<StockMovement> movements = stockMovementRepository.findAll();
@@ -99,7 +116,6 @@ public class InventoryService {
             } else if (movement.getType() == MovementType.OUT) {
                 currentStock = currentStock - movement.getQuantity();
 
-                // check current implementation
             } else if (movement.getType() == MovementType.ADJUST) {
                 currentStock = currentStock + movement.getQuantity();
             }
